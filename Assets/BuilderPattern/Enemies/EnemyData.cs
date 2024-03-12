@@ -8,6 +8,7 @@
 
 namespace BuilderPattern
 {
+    [System.Serializable]
     public class EnemyData
     {
         public WeaponStrategy WeaponStrategy;

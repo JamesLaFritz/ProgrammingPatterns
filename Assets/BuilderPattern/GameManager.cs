@@ -10,14 +10,13 @@ namespace BuilderPattern
 {
     public class GameManager : MonoBehaviour
     {
+        [SerializeField] private EnemyData m_enemyData = default;
+
+        private EnemyDirector m_enemyDirector = new EnemyDirector(new EnemyBuilder());
+        
         private void Start()
         {
-            Enemy enemy = new Enemy.FluentBuilder()
-                .WithName("Goblin")
-                .WithHealth(100)
-                .WithSpeed(5f)
-                .WithDamage(10)
-                .Build();
+            Enemy enemy = m_enemyDirector.Construct(m_enemyData);
 
             Instantiate(enemy);
         }

@@ -10,52 +10,73 @@ using UnityEngine;
 
 namespace BuilderPattern
 {
+
+    public interface IEnemyBuilder
+    {
+        IWeaponEnemyBuilder AddWeaponComponent();
+    }
+
+    public interface IWeaponEnemyBuilder
+    {
+        IHealthEnemyBuilder AddWeaponStrategy(WeaponStrategy strategy);
+    }
+
+    public interface IHealthEnemyBuilder
+    {
+        IFinalEnemyBuilder AddHealthComponent();
+    }
+
+    public interface IFinalEnemyBuilder
+    {
+        Enemy Build();
+    }
+
     public class EnemyDirector
     {
+        public IEnemyBuilder m_builder;
+        public EnemyDirector(EnemyBuilder builder)
+        {
+            m_builder = builder;
+        }
+
         /// <summary>
         /// Builds an enemy with a weapon and health component, using the provided strategies for each of them 
         /// </summary>
-        /// <param name="builder"></param>
         /// <param name="data"></param>
         /// <returns></returns>
-        public static Enemy Construct(EnemyBuilder builder, EnemyData data)
+        public Enemy Construct(EnemyData data)
         {
-            builder.AddWeaponComponent();
-            builder.AddWeaponStrategy(data.WeaponStrategy);
-            builder.AddHealthComponent();
-            
-            return builder.Build();
-
+            return m_builder
+                .AddWeaponComponent()
+                .AddWeaponStrategy(data.WeaponStrategy)
+                .AddHealthComponent()
+                .Build();
         }
-
-        #region Private Static Methods
-
-        internal static EnemyBuilder GetNewDefaultBuilder() => new EnemyBuilder(); 
-
-        #endregion
-
+        
     }
-
-    public class EnemyBuilder
+    
+    public class EnemyBuilder : IEnemyBuilder, IWeaponEnemyBuilder, IHealthEnemyBuilder, IFinalEnemyBuilder
     {
         private Enemy m_enemy = new GameObject("Enemy").AddComponent<Enemy>();
         
-        public void AddWeaponComponent()
+        public IWeaponEnemyBuilder AddWeaponComponent()
         {
             m_enemy.gameObject.AddComponent<EnemyWeapon>();
+            return this;
         }
 
-        public void AddWeaponStrategy(WeaponStrategy strategy)
+        public IHealthEnemyBuilder AddWeaponStrategy(WeaponStrategy strategy)
         {
             if (m_enemy.gameObject.TryGetComponent<EnemyWeapon>(out var weapon))
-            {
                 weapon.SetWeaponStrategy(strategy);
-            }
+
+            return this;
         }
 
-        public void AddHealthComponent()
+        public IFinalEnemyBuilder AddHealthComponent()
         {
             m_enemy.gameObject.AddComponent<Health>();
+            return this;
         }
 
         public Enemy Build()
