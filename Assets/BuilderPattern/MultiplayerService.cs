@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
@@ -31,11 +30,6 @@ namespace BuilderPattern
         private Allocation m_allocation;
         private Lobby m_currentLobby;
 
-        // Code smell
-        // Complex Object Creation
-        // Complex logic or multiple steps
-        // variations of objects
-
         public async Task CreateLobby(string relayJoinCode)
         {
             try
@@ -48,24 +42,11 @@ namespace BuilderPattern
                 m_currentLobby = await LobbyService.Instance.CreateLobbyAsync(m_lobbyName, m_maxPlayers, options);
                 Debug.Log($"Created lobby: {m_currentLobby.Name} with code {m_currentLobby.LobbyCode}");
 
-                await LobbyService.Instance.UpdateLobbyAsync(m_currentLobby.Id, new UpdateLobbyOptions
-                {
-                    Data = new Dictionary<string, DataObject>()
-                    {
-                        {
-                            "RelayJoinCode",
-                            new DataObject(DataObject.VisibilityOptions.Member, relayJoinCode)
-                        },
-                        {
-                            "ExamplePrivateData",
-                            new DataObject(visibility: DataObject.VisibilityOptions.Private, value: "PrivateData")
-                        },
-                        {
-                            "ExamplePublicData",
-                            new DataObject(visibility: DataObject.VisibilityOptions.Public, value: "PublicData")
-                        }
-                    }
-                });
+                await LobbyService.Instance.UpdateLobbyAsync(m_currentLobby.Id, new UpdateLobbyOptionsFluentBuilder()
+                    .AddMemberData("RelayJoinCode", relayJoinCode)
+                    .AddPrivateData("ExamplePrivateData", "PrivateData")
+                    .AddPublicData("ExamplePublicData", "PublicData", DataObject.IndexOptions.S1)
+                    .Build());
 
                 NetworkManager.Singleton.GetComponent<UnityTransport>()
                     .SetRelayServerData(new RelayServerData(m_allocation, ConnectionType));
