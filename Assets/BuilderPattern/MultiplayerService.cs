@@ -8,68 +8,74 @@ using Unity.Services.Lobbies.Models;
 using Unity.Services.Relay.Models;
 using UnityEngine;
 
-[System.Serializable]
-public enum EncryptionType
+namespace BuilderPattern
 {
-	DTLS, // Datagram Transport Layer Security
-	WSS // Web Socket Secure
-}
 
-public class MultiplayerService : MonoBehaviour
-{
-    [SerializeField] private string m_lobbyName = "Lobby";
-	[SerializeField] private int m_maxPlayers = 4;
-	[SerializeField] private EncryptionType m_encryption = EncryptionType.DTLS;
+    [System.Serializable]
+    public enum EncryptionType
+    {
+        DTLS, // Datagram Transport Layer Security
+        WSS // Web Socket Secure
+    }
 
-	private const string k_dtlsEncryption = "dtls"; // Datagram Transport Layer Security
-	private const string k_wssEncryption = "wss"; // Web Socket Secure
+    public class MultiplayerService : MonoBehaviour
+    {
+        [SerializeField] private string m_lobbyName = "Lobby";
+        [SerializeField] private int m_maxPlayers = 4;
+        [SerializeField] private EncryptionType m_encryption = EncryptionType.DTLS;
 
-	private string ConnectionType => m_encryption == EncryptionType.DTLS ? k_dtlsEncryption : k_wssEncryption;
-	private Allocation m_allocation;
-	private Lobby m_currentLobby;
-	
-	// Code smell
-	// Complex Object Creation
-	// Complex logic or multiple steps
-	// variations of objects
+        private const string k_dtlsEncryption = "dtls"; // Datagram Transport Layer Security
+        private const string k_wssEncryption = "wss"; // Web Socket Secure
 
-	public async Task CreateLobby(string relayJoinCode)
-	{
-		try
-		{
-			CreateLobbyOptions options = new CreateLobbyOptions
-			{
-				IsPrivate = false
-			};
+        private string ConnectionType => m_encryption == EncryptionType.DTLS ? k_dtlsEncryption : k_wssEncryption;
+        private Allocation m_allocation;
+        private Lobby m_currentLobby;
 
-			m_currentLobby = await LobbyService.Instance.CreateLobbyAsync(m_lobbyName, m_maxPlayers, options);
-			Debug.Log($"Created lobby: {m_currentLobby.Name} with code {m_currentLobby.LobbyCode}");
+        // Code smell
+        // Complex Object Creation
+        // Complex logic or multiple steps
+        // variations of objects
 
-			await LobbyService.Instance.UpdateLobbyAsync(m_currentLobby.Id, new UpdateLobbyOptions
-			{
-				Data = new Dictionary<string, DataObject>()
-				{
-					{
-						"RelayJoinCode",
-						new DataObject(DataObject.VisibilityOptions.Member, relayJoinCode)
-					},
-					{
-						"ExamplePrivateData",
-						new DataObject(visibility: DataObject.VisibilityOptions.Private, value: "PrivateData")
-					},
-					{
-						"ExamplePublicData",
-						new DataObject(visibility: DataObject.VisibilityOptions.Public, value: "PublicData")
-					}
-				}
-			});
+        public async Task CreateLobby(string relayJoinCode)
+        {
+            try
+            {
+                CreateLobbyOptions options = new CreateLobbyOptions
+                {
+                    IsPrivate = false
+                };
 
-			NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(m_allocation, ConnectionType));
+                m_currentLobby = await LobbyService.Instance.CreateLobbyAsync(m_lobbyName, m_maxPlayers, options);
+                Debug.Log($"Created lobby: {m_currentLobby.Name} with code {m_currentLobby.LobbyCode}");
 
-			NetworkManager.Singleton.StartHost();
-		} catch (LobbyServiceException e)
-		{
-			Debug.LogError($"Failed to create lobby: {e.Message}");
-		}
-	}
+                await LobbyService.Instance.UpdateLobbyAsync(m_currentLobby.Id, new UpdateLobbyOptions
+                {
+                    Data = new Dictionary<string, DataObject>()
+                    {
+                        {
+                            "RelayJoinCode",
+                            new DataObject(DataObject.VisibilityOptions.Member, relayJoinCode)
+                        },
+                        {
+                            "ExamplePrivateData",
+                            new DataObject(visibility: DataObject.VisibilityOptions.Private, value: "PrivateData")
+                        },
+                        {
+                            "ExamplePublicData",
+                            new DataObject(visibility: DataObject.VisibilityOptions.Public, value: "PublicData")
+                        }
+                    }
+                });
+
+                NetworkManager.Singleton.GetComponent<UnityTransport>()
+                    .SetRelayServerData(new RelayServerData(m_allocation, ConnectionType));
+
+                NetworkManager.Singleton.StartHost();
+            }
+            catch (LobbyServiceException e)
+            {
+                Debug.LogError($"Failed to create lobby: {e.Message}");
+            }
+        }
+    }
 }
